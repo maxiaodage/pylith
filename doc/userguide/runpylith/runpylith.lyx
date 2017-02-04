@@ -75,7 +75,7 @@ Running PyLith
 Figure 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "fig:pylith:workflow"
+reference "fig:parameters:gui:startup"
 
 \end_inset
 
@@ -851,6 +851,12 @@ This is generally a more useful way of determining problem settings, since
 \end_layout
 
 \begin_layout Subsubsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:pylithinfo"
+
+\end_inset
+
 List of PyLith Parameters (
 \family typewriter
 pylithinfo
@@ -863,41 +869,43 @@ The Python application
 \family typewriter
 pylithinfo
 \family default
- writes all of the current parameters to a text file.
- The default name of the text file is 
+ writes all of the current parameters to a text file or JSON file (default).
+ The default name of the JSON file is 
 \family typewriter
-pylith_parameters.txt
+pylith_parameters.
 \family default
-.
+json.
  The usage synopsis is
 \end_layout
 
 \begin_layout LyX-Code
-$ pylithinfo [--verbose] [--fileout=pylith_parameters.txt] [PyLith args]
+$ pylithinfo [--verbose-false] [--format={ascii,json}] [--filename=pylith_parame
+ters.txt] [PyLith args]
 \end_layout
 
 \begin_layout Standard
 where 
 \family typewriter
---verbose
+--verbose-false
 \family default
- (or 
+ turns off printing the descriptions of the properties and components as
+ well as the location where the current value was set, --format=ascii writers
+ an ASCII file and --format=json writers a JSON file, and 
 \family typewriter
--v
+--filename=pylith_parameters.json
 \family default
-) turns on printing the descriptions of the properties and components as
- well as the location where the current value was set, and 
-\family typewriter
---fileout=pylith_parameters.txt
-\family default
- (or 
-\family typewriter
--o pylith_parameters.txt
-\family default
-) sets the name of the output file.
+ sets the name of the output file.
  The lines in the text file are indented to show the hierarchy of the properties
  and components.
- 
+ The PyLith Parameter Viewer (see Chapter 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "chap:pylith:parameter:viewer"
+
+\end_inset
+
+) provides an graphical user interface for examining the JSON parameter
+ file.
 \end_layout
 
 \begin_layout Subsection
