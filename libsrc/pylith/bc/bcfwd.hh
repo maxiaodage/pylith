@@ -33,6 +33,7 @@ namespace pylith {
         class BoundaryCondition;
         class TimeDependentAuxiliaryFactory;
         class Dirichlet;
+        class DirichletBIE;
         class DirichletTimeDependent;
         class Neumann;
         class NeumannTimeDependent;

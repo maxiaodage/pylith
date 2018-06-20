@@ -35,6 +35,7 @@ libpylith_la_SOURCES = \
 	bc/BoundaryCondition.cc \
 	bc/TimeDependentAuxiliaryFactory.cc \
 	bc/Dirichlet.cc \
+	bc/DirichletBIE.cc \
 	bc/DirichletTimeDependent.cc \
 	bc/Neumann.cc \
 	bc/NeumannTimeDependent.cc \

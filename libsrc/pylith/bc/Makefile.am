@@ -23,6 +23,7 @@ subpkginclude_HEADERS = \
 	BoundaryCondition.hh \
 	TimeDependentAuxiliaryFactory.hh \
 	Dirichlet.hh \
+	DirichletBIE.hh \
 	DirichletTimeDependent.hh \
 	Neumann.hh \
 	NeumannTimeDependent.hh \
