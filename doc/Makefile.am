@@ -23,4 +23,4 @@ SUBDIRS = \
 	userguide \
 	refguide
 
-# End of file 
+# End of file

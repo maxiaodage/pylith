@@ -1,0 +1,58 @@
+\chapter{Spectral boundary Integral Equation Method Coupling with FEM Formulation}
+\label{cha:sbiefemcoupling:formulation}
+
+\section{Elasticity With Infinitesimal Strain and Faults With Prescribed Slip}
+
+For each fault, which is an internal interface, we add a boundary
+condition prescribing the jump in the displacement field across the
+fault,
+\begin{gather}
+\rho \frac{\partial^2\vec{u}}{\partial t^2} - \vec{f}(\vec{x},t) - \tensor{\nabla} \cdot 
+\tensor{\sigma}
+(\vec{u}) = \vec{0} \text{ in }\Omega, \\
+%
+\tensor{\sigma} \cdot \vec{n} = \vec{\tau}(\vec{x},t) \text{ on }\Gamma_\tau, \\
+%
+\vec{u} = \vec{u}_0(\vec{x},t) \text{ on }\Gamma_u, \\
+%
+\label{eqn:bc:prescribed_slip}
+\vec{0} = \vec{d}(\vec{x},t) - \vec{u}^+(\vec{x},t) + \vec{u}^-(\vec{x},t) \text{ on }\Gamma_f,
+\end{gather}
+where $\vec{u}^+$ is the displacement vector on the ``positive'' side
+of the fault, $\vec{u}^-$ is the displacement vector on the ``negative
+side of the fault, $\vec{d}$ is the slip vector on the fault, and
+$\vec{n}$ is the fault normal which points from the negative side of
+the fault to the positive side of the fault. Using a domain
+decomposition approach for constraining the fault slip, yields
+additional Neumann-like boundary conditions on the fault surface,
+\begin{gather}
+\tensor{\sigma} \cdot \vec{n} = -\vec{\lambda}(\vec{x},t) \text{ on }\Gamma_{f^+}, \\
+\tensor{\sigma} \cdot \vec{n} = +\vec{\lambda}(\vec{x},t) \text{ on }\Gamma_{f^-},
+\end{gather}
+where $\vec{\lambda}$ is the vector of Lagrange multipliers
+corresponding to the tractions applied to the fault surface to
+generate the prescribed slip.\\
+At the Virtual(SBIE) boundary we have: 
+\begin{gather}
+\vec{u} = \vec{u}_{SBIE}(\vec{x},t) \text{ on }\Gamma_{SBIE}
+\end{gather}
+By solving the following equations: 
+\begin{equation}
+\begin{split}
+\tau_1^\pm(x_1,t)&=\tau_1^{0\pm} (x_1,t)\mp\frac{\mu}{c_s}            \dot{u}_1^\pm(x_1,t) +f_1^\pm(x_1,t) \\
+\tau_2^\pm(x_1,t)&=\tau_2^{0\pm} (x_1,t)\mp\frac{(\lambda+2\mu)}{c_p} \dot{u}_2^\pm(x_1,t) +f_2^\pm(x_1,t)
+\label{eq:SBI_trac}
+\end{split}
+\end{equation}
+where $\pm$ represents upper and lower half-plane, $c_p$ is the pressure wave speed, $c_s$ is the shear wave speed, $\tau_i^0$ indicates the externally applied load (\textit{i.e.}, at infinity); and $f_i$ are linear functionals of the prior deformation history and are computed by the time convolution in the Fourier domain\\
+From the above equation we sovle for velocity:
+\begin{equation}\label{eq:SBI_velocity}
+\begin{split}
+\dot{u}_1^{\pm^{n+1}} &= \pm \frac{c_s}{\mu}( f_1^{\pm^{n+1}}+\tau_1^{0\pm}- \tau_1^{\pm^{n+1}} ) \\
+\dot{u}_2^{\pm^{n+1}} &= \pm \frac{c_p}{\lambda + 2 \mu} ( f_2^{\pm^{n+1}} + \tau_2^{0\pm} - \tau_2^{\pm^{n+1}} )
+\end{split}
+\end{equation}
+The time integration scheme used in the SBIE is explicit and given by sampling
+\begin{equation}
+u_i^{\pm{n+1}} = u_i^{\pm^n} + \Delta t \dot{u}_i^{\pm{n+1}} \label{eq:SBI_update_disp}
+\end{equation}
