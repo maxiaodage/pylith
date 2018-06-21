@@ -18,7 +18,12 @@ aux-config
 PyLith.egg-info
 autom4te.cache
 *~
+*.aux
+*.log
+*.out
 *.pyc
+*.synctex.gz
+*.toc
 .DS_Store
 examples/*/*/output
 examples/*/*/*/output/
