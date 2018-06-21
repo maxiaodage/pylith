@@ -123,9 +123,15 @@ pylith::feassemble::ConstraintPointwise::auxFieldDB(spatialdata::spatialdb::Spat
     PYLITH_METHOD_BEGIN;
     PYLITH_COMPONENT_DEBUG("auxFieldDB(value="<<value<<")");
 
-    pylith::feassemble::AuxiliaryFactory* factory = _auxFactory(); assert(factory);
-    factory->queryDB(value);
 
+    pylith::feassemble::AuxiliaryFactory* factory = _auxFactory();
+    if (!factory) {
+        PYLITH_COMPONENT_ERROR("Constraint does not contain an auxiliary factory.");
+        throw std::logic_error("Constraint does not contain an auxiliary factory.");
+    } else {
+        assert(factory);
+        factory->queryDB(value);
+    } // if/else
     PYLITH_METHOD_END;
 } // auxFieldDB
 
@@ -141,8 +147,14 @@ pylith::feassemble::ConstraintPointwise::auxSubfieldDiscretization(const char* n
     PYLITH_METHOD_BEGIN;
     PYLITH_COMPONENT_DEBUG("auxSubfieldDiscretization(name="<<name<<", basisOrder="<<basisOrder<<", quadOrder="<<quadOrder<<", isBasisContinuous="<<isBasisContinuous<<")");
 
-    pylith::feassemble::AuxiliaryFactory* factory = _auxFactory(); assert(factory);
-    factory->subfieldDiscretization(name, basisOrder, quadOrder, isBasisContinuous, feSpace);
+    pylith::feassemble::AuxiliaryFactory* factory = _auxFactory();
+    if (!factory) {
+        PYLITH_COMPONENT_ERROR("Constraint does not contain an auxiliary factory.");
+        throw std::logic_error("Constraint does not contain an auxiliary factory.");
+    } else {
+        assert(factory);
+        factory->subfieldDiscretization(name, basisOrder, quadOrder, isBasisContinuous, feSpace);
+    } // if/else
 
     PYLITH_METHOD_END;
 } // auxSubfieldDiscretization
