@@ -163,10 +163,6 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
     PetscDMLabel dmLabel;
     err = DMGetLabel(dmSoln, _label.c_str(), &dmLabel); PYLITH_CHECK_ERROR(err);
 
-    // Set auxiliary data
-    err = PetscObjectCompose((PetscObject) dmSoln, "dmAux", (PetscObject) dmAux); PYLITH_CHECK_ERROR(err);
-    err = PetscObjectCompose((PetscObject) dmSoln, "A", (PetscObject) _auxField->localVector()); PYLITH_CHECK_ERROR(err);
-
     IS points;
     PetscInt num_points;
     const PetscInt *pts;
