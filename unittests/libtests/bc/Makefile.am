@@ -32,6 +32,8 @@ testbc_SOURCES = \
 	TestBoundaryMesh_Cases.cc \
 	TestDirichletTimeDependent.cc \
 	TestDirichletTimeDependent_Cases.cc \
+	TestDirichletBIE.cc \
+	TestDirichletBIE_Cases.cc \
 	TestNeumannTimeDependent.cc \
 	TestNeumannTimeDependent_Cases.cc \
 	TestAbsorbingDampers.cc \
@@ -41,6 +43,7 @@ testbc_SOURCES = \
 noinst_HEADERS = \
 	TestBoundaryMesh.hh \
 	TestDirichletTimeDependent.hh \
+	TestDirichletBIE.hh \
 	TestNeumannTimeDependent.hh \
 	TestAbsorbingDampers.hh
 
@@ -63,4 +66,4 @@ if ENABLE_CUBIT
 endif
 
 
-# End of file 
+# End of file
