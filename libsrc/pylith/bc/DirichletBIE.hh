@@ -28,7 +28,7 @@
 // Include directives ---------------------------------------------------
 #include "BoundaryCondition.hh" // ISA BoundaryCondition
 #include "pylith/feassemble/ConstraintPointwise.hh" // ISA ConstraintPointwise
-
+#include "pylith/materials/materialsfwd.hh" // HODSA AuxillaryFactory
 #include "pylith/topology/topologyfwd.hh" // USES Field
 
 // Dirichlet ----------------------------------------------------
@@ -88,14 +88,27 @@ protected:
      *
      * @param[in] solution Solution field.
      */
-    virtual
-    void _auxFieldSetup(const pylith::topology::Field& solution) = 0;
+    void _auxFieldSetup(const pylith::topology::Field& solution);
+
+    /** Get factory for setting up auxliary fields.
+     *
+     * @returns Factor for auxiliary fields.
+     */
+    pylith::feassemble::AuxiliaryFactory* _auxFactory(void);
+
 
     // PROTECTED MEMBERS //////////////////////////////////////////////////
 protected:
 
     pylith::topology::Mesh* _boundaryMesh;   ///< Boundary mesh.
     pylith::topology::FieldBase::Description _description; ///< Description for constrained field.
+
+    //
+    // PRIVATE MEMBERS //////////////////////////////////////////////////
+private:
+
+    pylith::materials::AuxiliaryFactory* _auxMaterialFactory; ///< Factory for auxiliary subfields.
+    static const char* _pyreComponent; ///< Name of Pyre component.
 
     // NOT IMPLEMENTED ////////////////////////////////////////////////////
 private:

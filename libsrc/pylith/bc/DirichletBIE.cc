@@ -22,7 +22,7 @@
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/Field.hh" // USES Field
-#include "pylith/feassemble/AuxiliaryFactory.hh" // USES AuxiliaryFactory
+#include "pylith/materials/AuxiliaryFactory.hh" // USES AuxiliaryFactory
 #include "pylith/topology/VisitorMesh.hh" // USES VecVisitorMesh
 #include "pylith/topology/FieldQuery.hh" // HOLDSA FieldQuery
 #include "pylith/topology/CoordsVisitor.hh" // USES CoordsVisitor
@@ -39,7 +39,8 @@
 // ----------------------------------------------------------------------
 // Default constructor.
 pylith::bc::DirichletBIE::DirichletBIE(void) :
-    _boundaryMesh(NULL)
+    _boundaryMesh(NULL),
+    _auxMaterialFactory(new pylith::materials::AuxiliaryFactory)
 { // constructor
     _description.label = "unknown";
     _description.vectorFieldType = pylith::topology::FieldBase::OTHER;
@@ -63,6 +64,8 @@ pylith::bc::DirichletBIE::deallocate(void) {
     ConstraintPointwise::deallocate();
 
     delete _boundaryMesh; _boundaryMesh = NULL;
+    delete _auxMaterialFactory; _auxMaterialFactory = NULL;
+
     PYLITH_METHOD_END;
 } // deallocate
 
@@ -164,6 +167,37 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
     err = PetscObjectCompose((PetscObject) dmSoln, "dmAux", (PetscObject) dmAux); PYLITH_CHECK_ERROR(err);
     err = PetscObjectCompose((PetscObject) dmSoln, "A", (PetscObject) _auxField->localVector()); PYLITH_CHECK_ERROR(err);
 
+    IS points;
+    PetscInt num_points;
+    const PetscInt *pts;
+    PetscSection section;
+    PetscScalar *array;
+    const int labelId = 1;
+    const PylithInt numConstrained = _constrainedDOF.size();
+    const int fieldIndex = solution->subfieldInfo(_field.c_str()).index;
+
+    err = DMLabelGetStratumIS(dmLabel,labelId,&points);PYLITH_CHECK_ERROR(err);
+    err = ISGetLocalSize(points,&num_points);PYLITH_CHECK_ERROR(err);
+    err = ISGetIndices(points,&pts);PYLITH_CHECK_ERROR(err);
+    err = DMGetDefaultSection(dmSoln,&section);PYLITH_CHECK_ERROR(err);
+    err = VecGetArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
+    for (PetscInt p=0;p<num_points; ++p)
+    {
+        const PetscInt point = pts[p];
+        PetscInt dof, off;
+        err = PetscSectionGetFieldDof(section,point,fieldIndex,&dof);PYLITH_CHECK_ERROR(err);
+        err = PetscSectionGetFieldOffset(section,point,fieldIndex,&off);PYLITH_CHECK_ERROR(err);
+        if (!dof) continue;
+        assert(numConstrained<=dof);
+        for (PetscInt d=0; d<numConstrained;++d) array[off+_constrainedDOF[d]]=1.0;
+
+    }
+    err = VecRestoreArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
+    err = ISRestoreIndices(points,&pts);PYLITH_CHECK_ERROR(err);
+    err = ISDestroy(&points);PYLITH_CHECK_ERROR(err);
+
+
+
 #if 0
     void* context = NULL;
     const int labelId = 1;
@@ -182,6 +216,35 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
 
     PYLITH_METHOD_END;
 } // setSolution
+
+// ----------------------------------------------------------------------
+// Setup auxiliary subfields (discretization and query fns).
+void
+pylith::bc::DirichletBIE::_auxFieldSetup(const pylith::topology::Field& solution)
+{ // _auxFieldsSetup
+    PYLITH_METHOD_BEGIN;
+    PYLITH_COMPONENT_DEBUG("_auxFieldsSetup(solution="<<solution.label()<<")");
+
+    assert(_auxMaterialFactory);
+    assert(_normalizer);
+    _auxMaterialFactory->initialize(_auxField, *_normalizer, solution.spaceDim(),
+                                         &solution.subfieldInfo(_field.c_str()).description);
+
+    // :ATTENTION: The order of the factory methods must match the order of the auxiliary subfields in the FE kernels.
+    _auxMaterialFactory->density(); // 0
+    _auxMaterialFactory->shearModulus(); // 1
+    _auxMaterialFactory->bulkModulus(); // 2
+
+    PYLITH_METHOD_END;
+}     // _auxFieldSetup
+
+// ----------------------------------------------------------------------
+// Get factory for setting up auxliary fields.
+pylith::feassemble::AuxiliaryFactory*
+pylith::bc::DirichletBIE::_auxFactory(void)
+{ // _auxFactory
+    return _auxMaterialFactory;
+} // auxFactory
 
 
 // End of file
