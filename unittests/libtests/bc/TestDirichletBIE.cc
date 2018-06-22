@@ -116,40 +116,40 @@ pylith::bc::TestDirichletBIE::testAccessors(void)
 } // testAccessors
 
 // ----------------------------------------------------------------------
-void
-pylith::bc::TestDirichletBIE::testAuxFieldDiscretization(void)
-{ // testAuxFieldDiscretization
-    PYLITH_METHOD_BEGIN;
-
-    const topology::FieldBase::Discretization infoDefault = {-1, -1, true, pylith::topology::FieldBase::POLYNOMIAL_SPACE};
-    const topology::FieldBase::Discretization infoA = {1, 2, false, pylith::topology::FieldBase::POLYNOMIAL_SPACE};
-    const topology::FieldBase::Discretization infoB = {2, 2, true, pylith::topology::FieldBase::POINT_SPACE};
-
-    CPPUNIT_ASSERT(_bc);
-    CPPUNIT_ASSERT(!_bc->_auxFactory());
-    CPPUNIT_ASSERT_THROW(_bc->auxSubfieldDiscretization("A", infoA.basisOrder, infoA.quadOrder, infoA.isBasisContinuous, infoA.feSpace),
-    std::logic_error);
-
-    PYLITH_METHOD_END;
-} // testAuxFieldDiscretization
+// void
+// pylith::bc::TestDirichletBIE::testAuxFieldDiscretization(void)
+// { // testAuxFieldDiscretization
+//     PYLITH_METHOD_BEGIN;
+//
+//     const topology::FieldBase::Discretization infoDefault = {-1, -1, true, pylith::topology::FieldBase::POLYNOMIAL_SPACE};
+//     const topology::FieldBase::Discretization infoA = {1, 2, false, pylith::topology::FieldBase::POLYNOMIAL_SPACE};
+//     const topology::FieldBase::Discretization infoB = {2, 2, true, pylith::topology::FieldBase::POINT_SPACE};
+//
+//     CPPUNIT_ASSERT(_bc);
+//     CPPUNIT_ASSERT(!_bc->_auxFactory());
+//     CPPUNIT_ASSERT_THROW(_bc->auxSubfieldDiscretization("A", infoA.basisOrder, infoA.quadOrder, infoA.isBasisContinuous, infoA.feSpace),
+//     std::logic_error);
+//
+//     PYLITH_METHOD_END;
+// } // testAuxFieldDiscretization
 
 // ----------------------------------------------------------------------
-// Test auxFieldDB().
-void
-pylith::bc::TestDirichletBIE::testAuxFieldDB(void)
-{ // testAuxFieldDB
-    PYLITH_METHOD_BEGIN;
-
-    const std::string label = "test db";
-    spatialdata::spatialdb::UserFunctionDB db;
-    db.label(label.c_str());
-
-    CPPUNIT_ASSERT(_bc);
-    CPPUNIT_ASSERT(!_bc->_auxFactory());
-    CPPUNIT_ASSERT_THROW(_bc->auxFieldDB(&db),std::logic_error);
-
-    PYLITH_METHOD_END;
-} // testAuxFieldDB
+// // Test auxFieldDB().
+// void
+// pylith::bc::TestDirichletBIE::testAuxFieldDB(void)
+// { // testAuxFieldDB
+//     PYLITH_METHOD_BEGIN;
+//
+//     const std::string label = "test db";
+//     spatialdata::spatialdb::UserFunctionDB db;
+//     db.label(label.c_str());
+//
+//     CPPUNIT_ASSERT(_bc);
+//     CPPUNIT_ASSERT(!_bc->_auxFactory());
+//     CPPUNIT_ASSERT_THROW(_bc->auxFieldDB(&db),std::logic_error);
+//
+//     PYLITH_METHOD_END;
+// } // testAuxFieldDB
 
 
 // ----------------------------------------------------------------------
@@ -310,13 +310,13 @@ pylith::bc::TestDirichletBIE::testSetSolution(void)
     query.closeDB(_data->solnDB);
     _solution->scatterContextToLocal("global", INSERT_VALUES);
 
-#if 0 // :DEBUG:
+//#if 0 // :DEBUG:
     _bc->_boundaryMesh->view("::ascii_info_detail"); // :DEBUG:
     _solution->view("SOLUTION ALL"); // :DEBUG:
 
     PetscOptionsSetValue(NULL, "-dm_plex_print_l2", "1"); // :DEBUG:
     DMSetFromOptions(_solution->dmMesh()); // :DEBUG:
-#endif // :DEBUG:
+//#endif // :DEBUG:
 
     PylithReal norm = 0.0;
     query.openDB(_data->solnDB, _data->normalizer->lengthScale());
@@ -329,37 +329,37 @@ pylith::bc::TestDirichletBIE::testSetSolution(void)
 
 // ----------------------------------------------------------------------
 // Test _auxFieldSetup().
-void
-pylith::bc::TestDirichletBIE::testAuxFieldSetup(void)
-{ // testAuxFieldSetup
-    PYLITH_METHOD_BEGIN;
-
-    _initialize();
-    _setupSolutionField();
-
-    CPPUNIT_ASSERT(_bc);
-    CPPUNIT_ASSERT(_solution);
-    CPPUNIT_ASSERT(_mesh);
-    CPPUNIT_ASSERT(_data);
-    CPPUNIT_ASSERT(_data->normalizer);
-    const PylithReal timeScale = _data->normalizer->timeScale();
-
-    delete _bc->_boundaryMesh; _bc->_boundaryMesh = new pylith::topology::Mesh(_solution->mesh(), _data->bcLabel);
-    CPPUNIT_ASSERT(_bc->_boundaryMesh);
-
-    delete _bc->_auxField; _bc->_auxField = new pylith::topology::Field(*_bc->_boundaryMesh); CPPUNIT_ASSERT(_bc->_auxField);
-    _bc->_auxFieldSetup(*_solution);
-
-    CPPUNIT_ASSERT(_mesh->coordsys());
-    const size_t spaceDim = _mesh->coordsys()->spaceDim();
-    const pylith::topology::Field::VectorFieldEnum vectorFieldType = _data->vectorFieldType;
-    const size_t numComponents = (vectorFieldType == pylith::topology::Field::VECTOR) ? spaceDim : 1;
-
-    // Check discretizations
-    int ifield = 0;
-
-    PYLITH_METHOD_END;
-} // testAuxFieldSetup
+// void
+// pylith::bc::TestDirichletBIE::testAuxFieldSetup(void)
+// { // testAuxFieldSetup
+//     PYLITH_METHOD_BEGIN;
+//
+//     _initialize();
+//     _setupSolutionField();
+//
+//     CPPUNIT_ASSERT(_bc);
+//     CPPUNIT_ASSERT(_solution);
+//     CPPUNIT_ASSERT(_mesh);
+//     CPPUNIT_ASSERT(_data);
+//     CPPUNIT_ASSERT(_data->normalizer);
+//     const PylithReal timeScale = _data->normalizer->timeScale();
+//
+//     delete _bc->_boundaryMesh; _bc->_boundaryMesh = new pylith::topology::Mesh(_solution->mesh(), _data->bcLabel);
+//     CPPUNIT_ASSERT(_bc->_boundaryMesh);
+//
+//     delete _bc->_auxField; _bc->_auxField = new pylith::topology::Field(*_bc->_boundaryMesh); CPPUNIT_ASSERT(_bc->_auxField);
+//     _bc->_auxFieldSetup(*_solution);
+//
+//     CPPUNIT_ASSERT(_mesh->coordsys());
+//     const size_t spaceDim = _mesh->coordsys()->spaceDim();
+//     const pylith::topology::Field::VectorFieldEnum vectorFieldType = _data->vectorFieldType;
+//     const size_t numComponents = (vectorFieldType == pylith::topology::Field::VECTOR) ? spaceDim : 1;
+//
+//     // Check discretizations
+//     int ifield = 0;
+//
+//     PYLITH_METHOD_END;
+// } // testAuxFieldSetup
 
 
 // ----------------------------------------------------------------------

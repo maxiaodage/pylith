@@ -56,14 +56,14 @@ class pylith::bc::TestDirichletBIE : public CppUnit::TestFixture, public pylith:
 
     CPPUNIT_TEST(testConstructor);
     CPPUNIT_TEST(testAccessors);
-    CPPUNIT_TEST(testAuxFieldDiscretization);
-    CPPUNIT_TEST(testAuxFieldDB);
+    //CPPUNIT_TEST(testAuxFieldDiscretization);
+    //CPPUNIT_TEST(testAuxFieldDB);
     CPPUNIT_TEST(testNormalizer);
     CPPUNIT_TEST(testVerifyConfiguration);
     CPPUNIT_TEST(testInitialize);
     CPPUNIT_TEST(testPrestep);
     CPPUNIT_TEST(testSetSolution);
-    CPPUNIT_TEST(testAuxFieldSetup);
+    //CPPUNIT_TEST(testAuxFieldSetup);
 
     CPPUNIT_TEST_SUITE_END_ABSTRACT();
 
@@ -83,10 +83,10 @@ public:
     void testAccessors(void);
 
     /// Test auxFieldDiscretization().
-    void testAuxFieldDiscretization(void);
+    //void testAuxFieldDiscretization(void);
 
     /// Test auxFieldDB().
-    void testAuxFieldDB(void);
+    //void testAuxFieldDB(void);
 
     /// Test normalizer().
     void testNormalizer(void);
@@ -104,7 +104,7 @@ public:
     void testSetSolution(void);
 
     /// Test _auxFieldsSetup().
-    void testAuxFieldSetup(void);
+    //void testAuxFieldSetup(void);
 
     // PROTECTED MEMBERS //////////////////////////////////////////////////
 protected:

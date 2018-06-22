@@ -89,25 +89,17 @@ protected:
 
             // Spatial database user functions for auxiliary subfields.
 
-            // Initial amplitude
-            static double initial_disp_x(const double x,
-                                         const double y) {
-                return FILL_VALUE;
-            } // initial_disp_x
-            static double initial_disp_y(const double x,
-                                         const double y) {
-                return 2.4*x + 1.8*y;
-            } // initial_disp_y
+
 
             // Displacement solution field at time t.
 
             static double disp_x(const double x,
                                  const double y) {
-                return FILL_VALUE;
+                return 100.0e+3;
             } // disp_x
             static double disp_y(const double x,
                                  const double y) {
-                return initial_disp_y(x, y);
+                return 100.0e+3;
             } // disp_y
 
 protected:
@@ -146,25 +138,17 @@ protected:
 
             // Spatial database user functions for auxiliary subfields.
 
-            // Initial amplitude
-            static double initial_disp_x(const double x,
-                                         const double y) {
-                return FILL_VALUE;
-            } // initial_disp_x
-            static double initial_disp_y(const double x,
-                                         const double y) {
-                return 2.4*x + 1.8*y + 1.8*x*y;
-            } // initial_disp_y
+
 
             // Displacement solution field at time t.
 
             static double disp_x(const double x,
                                  const double y) {
-                return FILL_VALUE;
+                return 100.0e+3;
             } // disp_x
             static double disp_y(const double x,
                                  const double y) {
-                return initial_disp_y(x, y);
+                return 100.0e+3;
             } // disp_y
 
 protected:
