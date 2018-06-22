@@ -39,8 +39,7 @@
 // ----------------------------------------------------------------------
 // Default constructor.
 pylith::bc::DirichletBIE::DirichletBIE(void) :
-    _boundaryMesh(NULL),
-    _auxMaterialFactory(new pylith::materials::AuxiliaryFactory)
+    _boundaryMesh(NULL)
 { // constructor
     _description.label = "unknown";
     _description.vectorFieldType = pylith::topology::FieldBase::OTHER;
@@ -64,7 +63,6 @@ pylith::bc::DirichletBIE::deallocate(void) {
     ConstraintPointwise::deallocate();
 
     delete _boundaryMesh; _boundaryMesh = NULL;
-    delete _auxMaterialFactory; _auxMaterialFactory = NULL;
 
     PYLITH_METHOD_END;
 } // deallocate
@@ -118,14 +116,13 @@ pylith::bc::DirichletBIE::initialize(const pylith::topology::Field& solution)
 
     delete _auxField; _auxField = new pylith::topology::Field(*_boundaryMesh); assert(_auxField);
     _auxField->label("DirichletBIE auxiliary");
-    _auxFieldSetup(solution);
     _auxField->subfieldsSetup();
     _auxField->allocate();
     _auxField->zeroLocal();
 
     assert(_normalizer);
-    pylith::feassemble::AuxiliaryFactory* factory = _auxFactory(); assert(factory);
-    factory->initializeSubfields();
+    // pylith::feassemble::AuxiliaryFactory* factory = _auxFactory(); assert(factory);
+    // factory->initializeSubfields();
 
     //_auxField->view("AUXILIARY FIELD"); // :DEBUG: TEMPORARY
     writeInfo();
@@ -142,6 +139,40 @@ pylith::bc::DirichletBIE::initialize(const pylith::topology::Field& solution)
 
     PYLITH_METHOD_END;
 } // initialize
+
+/* Calculate stress for 2-D plane strain isotropic linear
+ * elasticity WITHOUT a reference stress and strain.
+ *
+ * Used to output the stress field.
+ *
+ * Solution fields: [disp(dim)]
+ * Auxiliary fields: [density(1), shear_modulus(1), bulk_modulus(1), ...]
+ */
+void
+pylith::bc::DirichletBIE::_stress(const PylithInt dim,
+                                  const PylithInt numS,
+                                  const PylithInt numA,
+                                  const PylithInt sOff[],
+                                  const PylithInt sOff_x[],
+                                  const PylithScalar s[],
+                                  const PylithScalar s_t[],
+                                  const PylithScalar s_x[],
+                                  const PylithInt aOff[],
+                                  const PylithInt aOff_x[],
+                                  const PylithScalar a[],
+                                  const PylithScalar a_t[],
+                                  const PylithScalar a_x[],
+                                  const PylithReal t,
+                                  const PylithScalar x[],
+                                  const PylithInt numConstants,
+                                  const PylithScalar constants[],
+                                  PylithScalar stress[])
+{
+    PetscInt     paramOff[3] = {0, 1, 2};
+    PylithScalar param[3]    = {0.0, _shearModulus, _bulkModulus};
+    pylith::fekernels::IsotropicLinearElasticityPlaneStrain::stress(dim, numS, 3,
+        sOff, sOff_x, s, s_t, s_x, paramOff, NULL, param, NULL, NULL, t, x, numConstants, constants, stress);
+} // stress
 
 // ----------------------------------------------------------------------
 // Set constrained values in solution field.
@@ -163,7 +194,8 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
     PetscDMLabel dmLabel;
     err = DMGetLabel(dmSoln, _label.c_str(), &dmLabel); PYLITH_CHECK_ERROR(err);
 
-    IS points;
+    PetscVec stressLocal;
+    PetscIS points;
     PetscInt num_points;
     const PetscInt *pts;
     PetscSection section;
@@ -171,11 +203,47 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
     const int labelId = 1;
     const PylithInt numConstrained = _constrainedDOF.size();
     const int fieldIndex = solution->subfieldInfo(_field.c_str()).index;
+    PetscPointFunc *stressKernels;
 
+    // Calculate stress on the Boundary
+    err = DMGetLocalVector(dmSoln, &stressLocal); PYLITH_CHECK_ERROR(err);
+    err = PetscCalloc1(solution->subfieldNames().size(), &stressKernels); PYLITH_CHECK_ERROR(err);
+    stressKernels[fieldIndex] = _stressKernel;
+    err = DMProjectFieldLabelLocal(dmSoln, t, dmLabel, 1, &labelId, numConstrained, &_constrainedDOF[0], solution->localVector(), stressKernels, INSERT_VALUES, stressLocal); PYLITH_CHECK_ERROR(err);
+    err = PetscFree(stressKernels); PYLITH_CHECK_ERROR(err);
+
+    // BIE setSolution
     err = DMLabelGetStratumIS(dmLabel,labelId,&points);PYLITH_CHECK_ERROR(err);
     err = ISGetLocalSize(points,&num_points);PYLITH_CHECK_ERROR(err);
     err = ISGetIndices(points,&pts);PYLITH_CHECK_ERROR(err);
     err = DMGetDefaultSection(dmSoln,&section);PYLITH_CHECK_ERROR(err);
+
+    // // Get coordiantes
+    // PetscDM cdm;
+    // PetscVec coordinates;
+    // PetscSection csection;
+    // PetscInt vStart, vEnd;
+    //
+    // err = DMGetDepthStratum(dmSoln, 0, &vStart, &vEnd);PYLITH_CHECK_ERROR(err);
+    // err = DMGetCoordinateDM(dmSoln, &cdm);PYLITH_CHECK_ERROR(err);
+    // err = DMGetDefaultSection(cdm, csection);PYLITH_CHECK_ERROR(err);
+    // err = DMGetCoordinatesLocal(dmSoln, &coordinates);PYLITH_CHECK_ERROR(err);
+    // err = VecGetArray(coordinates,&array);PYLITH_CHECK_ERROR(err);
+    // for (PetscInt p=0;p<num_points; ++p)
+    // {
+    //     const PetscInt point = pts[p];
+    //     PetscReal coord[3];
+    //     PetscInt dof, off;
+    //
+    //     if (point < vStart || point >= vEnd) continue;
+    //     err = PetscSectionGetDof(section,point,&dof);PYLITH_CHECK_ERROR(err);
+    //     err = PetscSectionGetOffset(section,point,&off);PYLITH_CHECK_ERROR(err);
+    //     for (PetscInt d=0; d<dof;++d) coord[d] = array[off+d];
+    //
+    // }
+    // err = VecRestoreArray(coordinates,&array);PYLITH_CHECK_ERROR(err);
+
+    //SBIE apply value
     err = VecGetArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
     for (PetscInt p=0;p<num_points; ++p)
     {
@@ -185,14 +253,14 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
         err = PetscSectionGetFieldOffset(section,point,fieldIndex,&off);PYLITH_CHECK_ERROR(err);
         if (!dof) continue;
         assert(numConstrained<=dof);
-        for (PetscInt d=0; d<numConstrained;++d) array[off+_constrainedDOF[d]]=1.0;
+        for (PetscInt d=0; d<numConstrained;++d) array[off+_constrainedDOF[d]]=100.0;
 
     }
     err = VecRestoreArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
     err = ISRestoreIndices(points,&pts);PYLITH_CHECK_ERROR(err);
     err = ISDestroy(&points);PYLITH_CHECK_ERROR(err);
 
-
+    err = DMRestoreLocalVector(dmSoln, &stressLocal); PYLITH_CHECK_ERROR(err);
 
 #if 0
     void* context = NULL;
@@ -213,33 +281,23 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
     PYLITH_METHOD_END;
 } // setSolution
 
+
 // ----------------------------------------------------------------------
-// Setup auxiliary subfields (discretization and query fns).
-void
-pylith::bc::DirichletBIE::_auxFieldSetup(const pylith::topology::Field& solution)
-{ // _auxFieldsSetup
-    PYLITH_METHOD_BEGIN;
-    PYLITH_COMPONENT_DEBUG("_auxFieldsSetup(solution="<<solution.label()<<")");
+// Compute stress values in solution field.
+PetscVec
+ _computeStress(pylith::topology::Field* solution,
+                 const double t)
+ {
 
-    assert(_auxMaterialFactory);
-    assert(_normalizer);
-    _auxMaterialFactory->initialize(_auxField, *_normalizer, solution.spaceDim(),
-                                         &solution.subfieldInfo(_field.c_str()).description);
+ }
 
-    // :ATTENTION: The order of the factory methods must match the order of the auxiliary subfields in the FE kernels.
-    _auxMaterialFactory->density(); // 0
-    _auxMaterialFactory->shearModulus(); // 1
-    _auxMaterialFactory->bulkModulus(); // 2
-
-    PYLITH_METHOD_END;
-}     // _auxFieldSetup
 
 // ----------------------------------------------------------------------
 // Get factory for setting up auxliary fields.
 pylith::feassemble::AuxiliaryFactory*
 pylith::bc::DirichletBIE::_auxFactory(void)
 { // _auxFactory
-    return _auxMaterialFactory;
+    return NULL;
 } // auxFactory
 
 
