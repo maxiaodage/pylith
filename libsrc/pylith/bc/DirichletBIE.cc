@@ -35,6 +35,7 @@
 #include <cassert> // USES assert()
 #include <stdexcept> // USES std::runtime_error
 #include <sstream>
+#include <iostream>
 
 // ----------------------------------------------------------------------
 // Default constructor.
@@ -169,7 +170,8 @@ pylith::bc::DirichletBIE::_stress(const PylithInt dim,
                                   PylithScalar stress[])
 {
     PetscInt     paramOff[3] = {0, 1, 2};
-    PylithScalar param[3]    = {0.0, _shearModulus, _bulkModulus};
+    //PylithScalar param[3]    = {0.0, _shearModulus, _bulkModulus};
+    PylithScalar param[3]    = {0.0, 1.0, 5.0/3.0};
     pylith::fekernels::IsotropicLinearElasticityPlaneStrain::stress(dim, numS, 3,
         sOff, sOff_x, s, s_t, s_x, paramOff, NULL, param, NULL, NULL, t, x, numConstants, constants, stress);
 } // stress
@@ -262,6 +264,10 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
 
     err = DMRestoreLocalVector(dmSoln, &stressLocal); PYLITH_CHECK_ERROR(err);
 
+    // PetscReal      norm;         /* norm of solution error */
+    // err = VecNorm(stressLocal,NORM_1,&norm);
+    // std::cout<<"\n"<<norm<<std::endl;
+
 #if 0
     void* context = NULL;
     const int labelId = 1;
@@ -284,13 +290,108 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
 
 // ----------------------------------------------------------------------
 // Compute stress values in solution field.
-PetscVec
- _computeStress(pylith::topology::Field* solution,
-                 const double t)
+void
+pylith::bc::DirichletBIE::_computeStress(pylith::topology::Field* stress,const pylith::topology::Field& solution,
+                                        const double t)
  {
+     PYLITH_METHOD_BEGIN;
+     PYLITH_COMPONENT_DEBUG("_computeStress(solution="<<solution.label()<<", t="<<t<<")");
+     assert(&solution);
+     assert(_auxField);
 
+     PetscErrorCode err;
+     PetscDM dmSoln = solution.dmMesh();
+     PetscDM dmAux = _auxField->dmMesh();
+
+     // Get label for constraint.
+     PetscDMLabel dmLabel;
+     err = DMGetLabel(dmSoln, _label.c_str(), &dmLabel); PYLITH_CHECK_ERROR(err);
+
+     const int labelId = 1;
+     const PylithInt numConstrained = _constrainedDOF.size();
+     const int fieldIndex = solution.subfieldInfo(_field.c_str()).index;
+     PetscPointFunc *stressKernels;
+
+     // Calculate stress on the Boundary
+     err = PetscCalloc1(solution.subfieldNames().size(), &stressKernels); PYLITH_CHECK_ERROR(err);
+     stressKernels[fieldIndex] = _stressKernel;
+     err = DMProjectFieldLabelLocal(dmSoln, t, dmLabel, 1, &labelId, numConstrained, &_constrainedDOF[0], solution.localVector(), stressKernels, INSERT_VALUES, stress->localVector()); PYLITH_CHECK_ERROR(err);
+     err = PetscFree(stressKernels); PYLITH_CHECK_ERROR(err);
+
+     PYLITH_METHOD_END;
  }
 
+
+ /** Compute SBIE solution on the boundary
+  *
+  * @param[out] solution Solution field.
+  * @param[in] t Current time.
+  */
+void
+pylith::bc::DirichletBIE::_computeSBIEsolution(PetscVec stressLocal,
+                                            PetscScalar *array)
+{
+
+}
+
+
+ /** Get SBIE solution in solution field.
+  *
+  * @param[out] solution Solution field.
+  * @param[in] t Current time.
+  */
+ void
+ pylith::bc::DirichletBIE::_setsolutionfromSBIEsolution(pylith::topology::Field* solution,
+                  const double t,
+                  PetscScalar *array)
+{
+    // setSolution
+        PYLITH_METHOD_BEGIN;
+        PYLITH_COMPONENT_DEBUG("_setSBIEsolution(solution="<<solution->label()<<", t="<<t<<")");
+
+        assert(solution);
+        assert(_auxField);
+
+        PetscErrorCode err;
+        PetscDM dmSoln = solution->dmMesh();
+        PetscDM dmAux = _auxField->dmMesh();
+
+        // Get label for constraint.
+        PetscDMLabel dmLabel;
+        err = DMGetLabel(dmSoln, _label.c_str(), &dmLabel); PYLITH_CHECK_ERROR(err);
+
+        PetscIS points;
+        PetscInt num_points;
+        const PetscInt *pts;
+        PetscSection section;
+    //    PetscScalar *array;
+        const int labelId = 1;
+        const PylithInt numConstrained = _constrainedDOF.size();
+        const int fieldIndex = solution->subfieldInfo(_field.c_str()).index;
+
+        //SBIE apply value
+        //err = VecGetArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
+        // for (PetscInt p=0;p<num_points; ++p)
+        // {
+        //     const PetscInt point = pts[p];
+        //     PetscInt dof, off;
+        //     err = PetscSectionGetFieldDof(section,point,fieldIndex,&dof);PYLITH_CHECK_ERROR(err);
+        //     err = PetscSectionGetFieldOffset(section,point,fieldIndex,&off);PYLITH_CHECK_ERROR(err);
+        //     if (!dof) continue;
+        //     assert(numConstrained<=dof);
+        //     for (PetscInt d=0; d<numConstrained;++d) array[off+_constrainedDOF[d]]=100.0;
+        //
+        // }
+    //    PetscVec array1;
+        //err = VecGetArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
+        err = VecRestoreArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
+    //    err = VecRestoreArray(solution->localVector(),&array);PYLITH_CHECK_ERROR(err);
+    //    err = ISRestoreIndices(points,&pts);PYLITH_CHECK_ERROR(err);
+    //    err = ISDestroy(&points);PYLITH_CHECK_ERROR(err);
+
+
+
+}
 
 // ----------------------------------------------------------------------
 // Get factory for setting up auxliary fields.

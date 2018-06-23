@@ -74,6 +74,8 @@ public:
     void setSolution(pylith::topology::Field* solution,
                      const double t);
 
+
+
     // PROTECTED MEMBERS //////////////////////////////////////////////////
 protected:
 
@@ -88,16 +90,26 @@ private:
      * @param[out] solution Solution field.
      * @param[in] t Current time.
      */
-    PetscVec _computeStress(pylith::topology::Field* solution,
-                     const double t);
-     /** Get SBIE solution in solution field.
+    void  _computeStress(pylith::topology::Field* stress,const pylith::topology::Field& solution,
+                                             const double t);
+
+   /** Compute SBIE solution on the boundary
+    *
+    * @param[out] solution Solution field.
+    * @param[in] t Current time.
+    */
+     void _computeSBIEsolution(PetscVec stressLocal,
+                      PetscScalar *array);
+
+
+     /** Set SBIE solution in solution field.
       *
       * @param[out] solution Solution field.
       * @param[in] t Current time.
       */
-     void _setSBIEsolution(pylith::topology::Field* solution,
+     void _setsolutionfromSBIEsolution(pylith::topology::Field* solution,
                       const double t,
-                      const PetscScalar *array);
+                      PetscScalar *array);
     // PRIVATE MEMBERS //////////////////////////////////////////////////
 private:
 
