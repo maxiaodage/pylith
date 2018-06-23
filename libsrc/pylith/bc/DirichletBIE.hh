@@ -124,7 +124,7 @@ private:
 
     DirichletBIE(const DirichletBIE&); ///< Not implemented.
     const DirichletBIE& operator=(const DirichletBIE&); ///< Not implemented.
-    void
+    static void
     _stress(const PylithInt dim,
             const PylithInt numS,
             const PylithInt numA,

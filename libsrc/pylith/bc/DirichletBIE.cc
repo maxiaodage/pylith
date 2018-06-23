@@ -40,7 +40,7 @@
 // ----------------------------------------------------------------------
 // Default constructor.
 pylith::bc::DirichletBIE::DirichletBIE(void) :
-    _boundaryMesh(NULL)
+    _boundaryMesh(NULL),_stressKernel(_stress)
 { // constructor
     _description.label = "unknown";
     _description.vectorFieldType = pylith::topology::FieldBase::OTHER;
@@ -211,6 +211,7 @@ pylith::bc::DirichletBIE::setSolution(pylith::topology::Field* solution,
     err = DMGetLocalVector(dmSoln, &stressLocal); PYLITH_CHECK_ERROR(err);
     err = PetscCalloc1(solution->subfieldNames().size(), &stressKernels); PYLITH_CHECK_ERROR(err);
     stressKernels[fieldIndex] = _stressKernel;
+//    stressKernels[fieldIndex] = _stress;
     err = DMProjectFieldLabelLocal(dmSoln, t, dmLabel, 1, &labelId, numConstrained, &_constrainedDOF[0], solution->localVector(), stressKernels, INSERT_VALUES, stressLocal); PYLITH_CHECK_ERROR(err);
     err = PetscFree(stressKernels); PYLITH_CHECK_ERROR(err);
 
@@ -310,12 +311,13 @@ pylith::bc::DirichletBIE::_computeStress(pylith::topology::Field* stress,const p
      const int labelId = 1;
      const PylithInt numConstrained = _constrainedDOF.size();
      const int fieldIndex = solution.subfieldInfo(_field.c_str()).index;
-     PetscPointFunc *stressKernels;
+     PetscPointFunc *stressKernels = NULL;
 
      // Calculate stress on the Boundary
      err = PetscCalloc1(solution.subfieldNames().size(), &stressKernels); PYLITH_CHECK_ERROR(err);
      stressKernels[fieldIndex] = _stressKernel;
-     err = DMProjectFieldLabelLocal(dmSoln, t, dmLabel, 1, &labelId, numConstrained, &_constrainedDOF[0], solution.localVector(), stressKernels, INSERT_VALUES, stress->localVector()); PYLITH_CHECK_ERROR(err);
+     err = DMProjectFieldLabelLocal(dmSoln, t, dmLabel, 1, &labelId, numConstrained, &_constrainedDOF[0],
+          solution.localVector(), stressKernels, INSERT_VALUES, stress->localVector()); PYLITH_CHECK_ERROR(err);
      err = PetscFree(stressKernels); PYLITH_CHECK_ERROR(err);
 
      PYLITH_METHOD_END;
@@ -331,6 +333,7 @@ void
 pylith::bc::DirichletBIE::_computeSBIEsolution(PetscVec stressLocal,
                                             PetscScalar *array)
 {
+
 
 }
 
