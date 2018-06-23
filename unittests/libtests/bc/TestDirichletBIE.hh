@@ -62,7 +62,9 @@ class pylith::bc::TestDirichletBIE : public CppUnit::TestFixture, public pylith:
     CPPUNIT_TEST(testVerifyConfiguration);
     CPPUNIT_TEST(testInitialize);
     CPPUNIT_TEST(testPrestep);
-    CPPUNIT_TEST(testSetSolution);
+//    CPPUNIT_TEST(testSetSolution);
+    // Adding a test for computeStress()
+    CPPUNIT_TEST(testcomputeStress);
     //CPPUNIT_TEST(testAuxFieldSetup);
 
     CPPUNIT_TEST_SUITE_END_ABSTRACT();
@@ -102,6 +104,9 @@ public:
 
     /// Test setSolution().
     void testSetSolution(void);
+
+    /// Test _computeStress().
+    void testcomputeStress(void);
 
     /// Test _auxFieldsSetup().
     //void testAuxFieldSetup(void);
@@ -160,6 +165,9 @@ public:
     const char** auxSubfields; ///< Names of auxiliary subfields.
     pylith::topology::Field::Discretization* auxDiscretizations; ///< Discretizations for auxiliary fields.
     spatialdata::spatialdb::UserFunctionDB* auxDB; ///< Spatial database with auxiliary field.
+
+    spatialdata::spatialdb::UserFunctionDB* tractionDB; ///< Spatial database with traction field.
+
 
     PylithReal t; ///< Time associated with setting solution.
     PylithReal dt; ///< Time step associated with setting solution.

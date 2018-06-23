@@ -44,6 +44,9 @@ protected:
             static const char* pressure_units(void) {
                 return "Pa";
             }
+            static const char* stress_units(void) {
+                return "Pa";
+            }
 
             // Velocity and fluid pressure solution fields at time t.
 
@@ -59,6 +62,8 @@ protected:
                                       const double y) {
                 return FILL_VALUE;
             } // fluid_press
+
+
 
             void setUp(void) {
                 TestDirichletBIE::setUp();
@@ -80,40 +85,54 @@ protected:
                 static const int constrainedDOF[2] = { 0, 1 };
                 _data->constrainedDOF = const_cast<int*>(constrainedDOF);
 
+
             } // setUp
-        }; // class TestDirichletTimeDependent_TriP1
-
-
+        };
         // --------------------------------------------------------------
-        class TestDirichletBIE_TriP1 : public TestDirichletBIE_InitialDisp2D {
+        class TestDirichletBIE_QuadP1 : public TestDirichletBIE_InitialDisp2D {
 
             // Spatial database user functions for auxiliary subfields.
-
-
-
             // Displacement solution field at time t.
 
             static double disp_x(const double x,
                                  const double y) {
-                return 100.0e+3;
+                return x;
             } // disp_x
             static double disp_y(const double x,
                                  const double y) {
-                return 100.0e+3;
+                return y;
             } // disp_y
+            static double stress_xx(const double x,
+                                      const double y) {
+                return 4.0;
+
+            } // stress_xx
+            static double stress_yy(const double x,
+                                      const double y) {
+                return 4.0;
+            } // stress_yy
+            static double stress_xy(const double x,
+                                      const double y) {
+                return 0.0;
+            } // stress_xy
+            static double stress_zz(const double x,
+                                      const double y) {
+                return 2;
+            } // stress_zz
+
+
 
 protected:
 
-            CPPUNIT_TEST_SUB_SUITE(TestDirichletBIE_TriP1, TestDirichletBIE_InitialDisp2D);
+            CPPUNIT_TEST_SUB_SUITE(TestDirichletBIE_QuadP1, TestDirichletBIE_InitialDisp2D);
             CPPUNIT_TEST_SUITE_END();
             void setUp(void) {
                 TestDirichletBIE_InitialDisp2D::setUp();
-                _data->meshFilename = "data/tri_small.mesh";
-                _data->bcLabel = "boundary_bottom";
-
+                _data->meshFilename = "data/quad_small.mesh";
+                _data->bcLabel = "boundary_top";
                 _data->t = 1.23;
                 _data->dt = 0.1;
-                _data->solnNumSubfields = 3;
+                _data->solnNumSubfields = 2;
                 static const pylith::topology::Field::Discretization solnDiscretizations[3] = {
                     {1, 1, true, pylith::topology::Field::POLYNOMIAL_SPACE}, // displacement
                     {1, 1, true, pylith::topology::Field::POLYNOMIAL_SPACE}, // velocity
@@ -129,63 +148,20 @@ protected:
                 _data->solnDB->addValue("velocity_y", vel_y, vel_units());
                 _data->solnDB->addValue("fluid_pressure", fluid_press, pressure_units());
 
-            } // setUp
-        }; // class TestDirichletTimeDependent_TriP1
-        CPPUNIT_TEST_SUITE_REGISTRATION(TestDirichletBIE_TriP1);
-
-        // --------------------------------------------------------------
-        class TestDirichletBIE_TriP2 : public TestDirichletBIE_InitialDisp2D {
-
-            // Spatial database user functions for auxiliary subfields.
-
-
-
-            // Displacement solution field at time t.
-
-            static double disp_x(const double x,
-                                 const double y) {
-                return 100.0e+3;
-            } // disp_x
-            static double disp_y(const double x,
-                                 const double y) {
-                return 100.0e+3;
-            } // disp_y
-
-protected:
-
-            CPPUNIT_TEST_SUB_SUITE(TestDirichletBIE_TriP2, TestDirichletBIE_InitialDisp2D);
-            CPPUNIT_TEST_SUITE_END();
-            void setUp(void) {
-                TestDirichletBIE_InitialDisp2D::setUp();
-                _data->meshFilename = "data/tri_small.mesh";
-                _data->bcLabel = "boundary_bottom";
-
-                static const pylith::topology::Field::Discretization auxDiscretizations[1] = {
-                    {2, 2, true, pylith::topology::Field::POLYNOMIAL_SPACE}, // initial_amplitude
-                };
-                _data->auxDiscretizations = const_cast<pylith::topology::Field::Discretization*>(auxDiscretizations);
-
-                _data->t = 1.23;
-                _data->dt = 0.1;
-                _data->solnNumSubfields = 3;
-                static const pylith::topology::Field::Discretization solnDiscretizations[3] = {
-                    {2, 2, true, pylith::topology::Field::POLYNOMIAL_SPACE}, // displacement
-                    {2, 2, true, pylith::topology::Field::POLYNOMIAL_SPACE}, // velocity
-                    {2, 2, true, pylith::topology::Field::POLYNOMIAL_SPACE}, // fluid_pressure
-                };
-                _data->solnDiscretizations = const_cast<pylith::topology::Field::Discretization*>(solnDiscretizations);
-
-                CPPUNIT_ASSERT(_data->solnDB);
-                _data->solnDB->coordsys(*_data->cs);
-                _data->solnDB->addValue("displacement_x", disp_x, disp_units());
-                _data->solnDB->addValue("displacement_y", disp_y, disp_units());
-                _data->solnDB->addValue("velocity_x", vel_x, vel_units());
-                _data->solnDB->addValue("velocity_y", vel_y, vel_units());
-                _data->solnDB->addValue("fluid_pressure", fluid_press, pressure_units());
+                CPPUNIT_ASSERT(_data->tractionDB);
+                _data->tractionDB->coordsys(*_data->cs);
+                _data->tractionDB->addValue("stress_xx", stress_xx, stress_units());
+                 _data->tractionDB->addValue("stress_yy", stress_yy, stress_units());
+                 _data->tractionDB->addValue("stress_xy", stress_xy, stress_units());
+                 _data->tractionDB->addValue("stress_zz", stress_zz, stress_units());
 
             } // setUp
-        }; // class TestDirichletTimeDependent_TriP2
-        CPPUNIT_TEST_SUITE_REGISTRATION(TestDirichletBIE_TriP2);
+        }; // class TestDirichletBIE_QuadP1
+        CPPUNIT_TEST_SUITE_REGISTRATION(TestDirichletBIE_QuadP1);
+
+
+
+
 
 #if 0
         // --------------------------------------------------------------

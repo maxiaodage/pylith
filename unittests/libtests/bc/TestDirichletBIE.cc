@@ -263,6 +263,7 @@ pylith::bc::TestDirichletBIE::testPrestep(void)
 
 // ----------------------------------------------------------------------
 // Test setSolution().
+/*
 void
 pylith::bc::TestDirichletBIE::testSetSolution(void)
 { // testSetSolution
@@ -310,13 +311,13 @@ pylith::bc::TestDirichletBIE::testSetSolution(void)
     query.closeDB(_data->solnDB);
     _solution->scatterContextToLocal("global", INSERT_VALUES);
 
-//#if 0 // :DEBUG:
+#if 0 // :DEBUG:
     _bc->_boundaryMesh->view("::ascii_info_detail"); // :DEBUG:
     _solution->view("SOLUTION ALL"); // :DEBUG:
 
     PetscOptionsSetValue(NULL, "-dm_plex_print_l2", "1"); // :DEBUG:
     DMSetFromOptions(_solution->dmMesh()); // :DEBUG:
-//#endif // :DEBUG:
+#endif // :DEBUG:
 
     PylithReal norm = 0.0;
     query.openDB(_data->solnDB, _data->normalizer->lengthScale());
@@ -326,6 +327,83 @@ pylith::bc::TestDirichletBIE::testSetSolution(void)
 
     PYLITH_METHOD_END;
 } // testSetSolution
+*/
+
+
+// ----------------------------------------------------------------------
+// Test _computeStress().
+void
+pylith::bc::TestDirichletBIE::testcomputeStress(void)
+{ // testcomputeStress
+    PYLITH_METHOD_BEGIN;
+
+    _initialize();
+    _setupSolutionField();
+
+    CPPUNIT_ASSERT(_bc);
+    CPPUNIT_ASSERT(_solution);
+    _bc->initialize(*_solution);
+
+    // Initialize solution field.
+    _solution->allocate();
+    PetscErrorCode err;
+    err = VecSet(_solution->localVector(), FILL_VALUE); CPPUNIT_ASSERT(!err);
+
+    // Set solution field.
+    CPPUNIT_ASSERT(_data);
+    //_solution->mesh().view(":detail.txt:ascii_info_detail"); // :DEBUG: TEMPORARY
+    _bc->prestep(_data->t, _data->dt);
+
+    const PylithReal t = _data->t;
+    const PetscDM dmSoln = _solution->dmMesh(); CPPUNIT_ASSERT(dmSoln);
+    pylith::topology::FieldQuery query(*_solution);
+    query.initializeWithDefaultQueryFns();
+    CPPUNIT_ASSERT(_data->normalizer);
+    query.openDB(_data->solnDB, _data->normalizer->lengthScale());
+    err = DMProjectFunction(dmSoln, t, query.functions(), (void**)query.contextPtrs(), INSERT_VALUES, _solution->localVector()); CPPUNIT_ASSERT(!err);
+    query.closeDB(_data->solnDB);
+
+    pylith::topology::Field stress(*_bc->_boundaryMesh);
+    const char* stressComponents[4] = {"stress_xx", "stress_yy", "stress_zz", "stress_xy"};
+    stress.subfieldAdd("stress",
+                     "stress",
+                     pylith::topology::Field::OTHER,
+                     stressComponents,
+                     2,
+    //                 pressureScale,
+                     0.1,
+                     1,
+                     1,
+                     true,
+                     pylith::topology::Field::POLYNOMIAL_SPACE);
+    stress.subfieldsSetup();
+    stress.allocate();
+    stress.zeroLocal();
+    _bc->_computeStress(&stress,*_solution, t);
+
+
+//#if 0 // :DEBUG:
+//    _bc->_boundaryMesh->view("::ascii_info_detail"); // :DEBUG:
+    //_solution->view("SOLUTION ALL"); // :DEBUG:
+    stress.view("stress ALL"); // :DEBUG:
+
+
+    PetscOptionsSetValue(NULL, "-dm_plex_print_l2", "1"); // :DEBUG:
+    DMSetFromOptions(_solution->dmMesh()); // :DEBUG:
+//#endif // :DEBUG:
+
+pylith::topology::FieldQuery queryStress(stress);
+queryStress.initializeWithDefaultQueryFns();
+const PylithReal tolerance = 1.0e-6;
+    PylithReal norm = 0.0;
+    queryStress.openDB(_data->tractionDB, _data->normalizer->lengthScale());
+    err = DMPlexComputeL2DiffLocal(stress.dmMesh(), t, queryStress.functions(), (void**)queryStress.contextPtrs(), stress.localVector(), &norm); CPPUNIT_ASSERT(!err);
+    queryStress.closeDB(_data->tractionDB);
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(0.0, norm, tolerance);
+
+    PYLITH_METHOD_END;
+} // testcomputeStress
+
 
 // ----------------------------------------------------------------------
 // Test _auxFieldSetup().
@@ -428,12 +506,16 @@ pylith::bc::TestDirichletBIE_Data::TestDirichletBIE_Data(void) :
     auxSubfields(NULL),
     auxDiscretizations(NULL),
     auxDB(NULL),
+    tractionDB(new spatialdata::spatialdb::UserFunctionDB),
     t(0.0),
     dt(0.0),
     solnNumSubfields(0),
     solnDiscretizations(NULL),
     solnDB(new spatialdata::spatialdb::UserFunctionDB)
+
 { // constructor
+    tractionDB->label("Traction UserFunction spatial database");
+    solnDB->label("Solution UserFunction spatial database");
 } // constructor
 
 // ----------------------------------------------------------------------
@@ -443,6 +525,7 @@ pylith::bc::TestDirichletBIE_Data::~TestDirichletBIE_Data(void)
     delete cs; cs = NULL;
     delete normalizer; normalizer = NULL;
     delete auxDB; auxDB = NULL;
+    delete tractionDB; tractionDB = NULL;
     delete solnDB; solnDB = NULL;
 } // destructor
 
