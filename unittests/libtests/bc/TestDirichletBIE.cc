@@ -369,7 +369,7 @@ pylith::bc::TestDirichletBIE::testcomputeStress(void)
                      "stress",
                      pylith::topology::Field::OTHER,
                      stressComponents,
-                     2,
+                     4,
     //                 pressureScale,
                      0.1,
                      1,
